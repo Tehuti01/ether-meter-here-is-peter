@@ -1,0 +1,24 @@
+{
+  "name": "@aether-net/core",
+  "version": "0.1.0",
+  "description": "TypeScript SDK for Aether-Net — AI-Driven Decentralized Physics Engine",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "clean": "rm -rf dist"
+  },
+  "keywords": ["physics", "wasm", "webassembly", "rust", "threejs", "golden-ratio"],
+  "license": "MIT",
+  "devDependencies": {
+    "typescript": "^5.4.0"
+  },
+  "peerDependencies": {
+    "three": ">=0.150.0"
+  },
+  "peerDependenciesMeta": {
+    "three": { "optional": true }
+  }
+}

@@ -1,0 +1,17 @@
+# Rust
+/target/
+Cargo.lock
+
+# Node
+node_modules/
+ts/dist/
+
+# macOS
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
+
+# Wasm build output
+/pkg/
