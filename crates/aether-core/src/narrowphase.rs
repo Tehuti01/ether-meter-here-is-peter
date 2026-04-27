@@ -45,8 +45,12 @@ pub fn collide(
             sphere_plane(pos_a, *radius, *normal, *offset)
         }
         (Shape::Plane { normal, offset }, Shape::Sphere { radius }) => {
+            // sphere_plane computes with sphere as "A", normal points from sphere toward plane
+            // When swapped: plane=A, sphere=B. Normal should point from A toward B (plane→sphere)
+            // = opposite of penetration direction = the plane normal itself
             let mut m = sphere_plane(pos_b, *radius, *normal, *offset);
-            for c in &mut m.contacts { c.normal = -c.normal; std::mem::swap(&mut c.point_a, &mut c.point_b); }
+            // Swap point_a and point_b to match the A/B ordering
+            for c in &mut m.contacts { std::mem::swap(&mut c.point_a, &mut c.point_b); }
             m
         }
         (Shape::Sphere { radius }, Shape::Cuboid { half_extents }) => {

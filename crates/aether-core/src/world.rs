@@ -215,12 +215,33 @@ impl World {
 
     fn broadphase_detect(&mut self) -> Vec<crate::broadphase::BroadPair> {
         self.broadphase.clear();
+        let mut plane_indices: Vec<u32> = Vec::new();
+
         for (idx, body) in self.bodies.iter().enumerate() {
             if body.flags.sleeping && body.is_static() { continue; }
-            let aabb = self.body_aabb(idx);
-            self.broadphase.insert(idx as u32, &aabb);
+            // Check if this body has a plane collider — planes skip the grid
+            let is_plane = body.collider_ids.iter().any(|cid| {
+                self.colliders.iter().any(|c| c.id == *cid && matches!(c.shape, Shape::Plane { .. }))
+            });
+            if is_plane {
+                plane_indices.push(idx as u32);
+            } else {
+                let aabb = self.body_aabb(idx);
+                self.broadphase.insert(idx as u32, &aabb);
+            }
         }
-        self.broadphase.find_pairs()
+
+        let mut pairs = self.broadphase.find_pairs();
+
+        // Pair every plane with every dynamic body (O(planes × dynamic_bodies))
+        for &plane_idx in &plane_indices {
+            for (idx, body) in self.bodies.iter().enumerate() {
+                if idx as u32 == plane_idx { continue; }
+                if body.is_static() { continue; }
+                pairs.push(crate::broadphase::BroadPair::new(plane_idx, idx as u32));
+            }
+        }
+        pairs
     }
 
     fn body_aabb(&self, idx: usize) -> AABB {
@@ -328,7 +349,6 @@ mod tests {
     }
 
     #[test]
-    #[ignore = "Requires plane-specific broadphase optimization — tracked for Phase 1"]
     fn sphere_rests_on_ground_plane() {
         let mut world = World::new();
         let _ground = world.create_static(Shape::Plane {
