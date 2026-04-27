@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aether-Net — AI-Driven Decentralized Real-Time Physics Engine</title>
+  <meta name="description" content="Democratize hyper-realistic spatial computing. Aether-Net offloads physics to a decentralized edge network powered by Rust, WebAssembly, and Neural Physics AI.">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- ═══════════ NAV ═══════════ -->
+<nav class="nav" id="nav">
+  <a href="#" class="nav-logo">
+    <img src="assets/emblem.png" alt="Aether-Net Emblem">
+    <span>Aether-Net</span>
+  </a>
+  <ul class="nav-links">
+    <li><a href="#architecture">Architecture</a></li>
+    <li><a href="#features">Features</a></li>
+    <li><a href="#perspectives">Perspectives</a></li>
+    <li><a href="#roadmap">Roadmap</a></li>
+    <li><a href="#monetization">Strategy</a></li>
+  </ul>
+  <button class="nav-cta" id="nav-cta">Get Started</button>
+</nav>
+
+<!-- ═══════════ HERO ═══════════ -->
+<section class="hero" id="hero">
+  <div class="hero-content">
+    <img src="assets/emblem.png" alt="Aether-Net Core" class="hero-emblem">
+    <div class="hero-tag">The Future of Spatial Computing</div>
+    <h1>Decentralized Physics.<br><span class="gradient-text">Powered by AI.</span></h1>
+    <p class="hero-sub">
+      A free, open-source Rust/Wasm engine that turns every browser into a physics compute node.
+      Neural Physics AI predicts physical interactions locally with 99.9% accuracy — eliminating
+      the need for centralized servers.
+    </p>
+    <div class="hero-buttons">
+      <button class="btn-primary" id="hero-docs">Read the Docs</button>
+      <button class="btn-secondary" id="hero-github">View on GitHub</button>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ STATS ═══════════ -->
+<div class="stats-bar reveal">
+  <div class="stat-item">
+    <div class="stat-value" id="stat-bandwidth">80%</div>
+    <div class="stat-label">Bandwidth Reduction</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-value" id="stat-accuracy">99.9%</div>
+    <div class="stat-label">AI Prediction Accuracy</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-value" id="stat-bodies">5,000+</div>
+    <div class="stat-label">Rigid Bodies @ 60fps</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-value" id="stat-latency">0ms</div>
+    <div class="stat-label">Perceived Latency</div>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- ═══════════ PROBLEM / SOLUTION ═══════════ -->
+<section class="section" id="problem">
+  <div class="reveal">
+    <span class="section-label">The Challenge</span>
+    <h2 class="section-title">Centralized Servers Can't Scale</h2>
+    <p class="section-desc">As concurrent users grow, traditional authoritative servers bottleneck — creating rubber-banding, latency spikes, and runaway cloud costs.</p>
+  </div>
+  <div class="problem-solution">
+    <div class="ps-card problem reveal">
+      <div class="ps-icon">🔥</div>
+      <h3>The Problem</h3>
+      <p>Traditional multiplayer physics engines rely on centralized servers to calculate collisions, gravity, and fluid dynamics. These servers become the single point of failure and cost — bottlenecking at scale with rubber-banding and exorbitant compute bills.</p>
+    </div>
+    <div class="ps-card solution reveal">
+      <div class="ps-icon">⚡</div>
+      <h3>The Aether-Net Solution</h3>
+      <p>A distributed physics engine where every connected client acts as a compute node, synchronized via lightweight state channels. Combined with "Neural Physics" — localized AI models that predict physical outcomes with 99.9% accuracy — reducing sync bandwidth by orders of magnitude.</p>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ═══════════ ARCHITECTURE ═══════════ -->
+<section class="section" id="architecture">
+  <div class="reveal">
+    <span class="section-label">Three-Layer Architecture</span>
+    <h2 class="section-title">Engineered for Uncompromising Speed</h2>
+    <p class="section-desc">Three distinct layers — each optimized for its role — compose the Aether-Net stack.</p>
+  </div>
+  <div class="arch-grid">
+    <div class="arch-card reveal">
+      <span class="arch-layer">Layer 1 — Compute</span>
+      <div class="arch-icon">⚙️</div>
+      <h3>Rust & WebAssembly</h3>
+      <p>Custom-built, multi-threaded rigid-body and fluid dynamics solver. Compiles to Wasm for near-native browser performance. Rust's ownership model prevents memory leaks in long sessions.</p>
+      <div class="arch-tech">
+        <span>Rust</span><span>Wasm</span><span>SIMD</span><span>SharedArrayBuffer</span>
+      </div>
+    </div>
+    <div class="arch-card reveal">
+      <span class="arch-layer">Layer 2 — Integration</span>
+      <div class="arch-icon">🔗</div>
+      <h3>TypeScript API</h3>
+      <p>Strictly-typed API wrapper for web developers. Out-of-the-box adapters for Three.js, Babylon.js, and PlayCanvas. Manages Wasm lifecycle and buffer array data transfer.</p>
+      <div class="arch-tech">
+        <span>TypeScript</span><span>Three.js</span><span>Babylon.js</span><span>PlayCanvas</span>
+      </div>
+    </div>
+    <div class="arch-card reveal">
+      <span class="arch-layer">Layer 3 — AI Predictive</span>
+      <div class="arch-icon">🧠</div>
+      <h3>Neural Physics</h3>
+      <p>Optimized ML models (ONNX → Wasm) run locally. Predictive State Resolution fills visual gaps between sync ticks. AI-driven procedural destruction offloads stress calculations to NPU.</p>
+      <div class="arch-tech">
+        <span>ONNX</span><span>PSR</span><span>NPU</span><span>Federated ML</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Code Example -->
+  <div class="code-block reveal">
+    <div class="code-header">
+      <div class="code-dot red"></div>
+      <div class="code-dot yellow"></div>
+      <div class="code-dot green"></div>
+      <span class="code-lang">TypeScript — Quick Start</span>
+    </div>
+    <pre class="code-body"><code><span class="cm">// Initialize the Aether-Net physics world in 4 lines</span>
+<span class="kw">import</span> { <span class="fn">AetherWorld</span>, <span class="fn">RigidBody</span>, <span class="fn">NeuralPhysics</span> } <span class="kw">from</span> <span class="str">'@aether-net/core'</span>;
+
+<span class="kw">const</span> world = <span class="kw">new</span> <span class="fn">AetherWorld</span>({
+  <span class="ty">gravity</span>: [<span class="num">0</span>, <span class="num">-9.81</span>, <span class="num">0</span>],
+  <span class="ty">neuralPhysics</span>: <span class="kw">true</span>
+});
+
+<span class="kw">const</span> cube = world.<span class="fn">createBody</span>(
+  <span class="fn">RigidBody</span>.<span class="fn">cuboid</span>(<span class="num">1</span>, <span class="num">1</span>, <span class="num">1</span>),
+  { <span class="ty">mass</span>: <span class="num">5.0</span> }
+);
+
+<span class="cm">// Connect to the decentralized edge network</span>
+<span class="kw">await</span> world.<span class="fn">connectP2P</span>({ <span class="ty">region</span>: <span class="str">'auto'</span>, <span class="ty">maxPeers</span>: <span class="num">64</span> });
+
+<span class="cm">// Physics runs at 60fps — AI fills in between sync ticks</span>
+world.<span class="fn">step</span>(<span class="num">1</span>/<span class="num">60</span>);</code></pre>
+  </div>
+</section>
+
+<!-- ═══════════ NETWORK SHOWCASE ═══════════ -->
+<div class="section">
+  <div class="network-showcase reveal">
+    <img src="assets/network.png" alt="Aether-Net Decentralized Network Visualization">
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- ═══════════ FEATURES ═══════════ -->
+<section class="section" id="features">
+  <div class="reveal">
+    <span class="section-label">Feature Matrix</span>
+    <h2 class="section-title">Industrial-Grade Capabilities</h2>
+    <p class="section-desc">Every feature is classified by priority and engineered to work at the edge.</p>
+  </div>
+  <div class="reveal" style="overflow-x:auto;">
+    <table class="features-table" id="features-table">
+      <thead>
+        <tr>
+          <th>Feature</th>
+          <th>Description</th>
+          <th>Implementation</th>
+          <th>Priority</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Edge-Compute Node Protocol</td>
+          <td>Devices share idle compute power to process physics for neighboring players in the spatial grid.</td>
+          <td>Rust-based P2P WebRTC data channels for low-latency UDP-like communication.</td>
+          <td><span class="priority-badge p0">P0</span></td>
+        </tr>
+        <tr>
+          <td>Neural Physics Solver</td>
+          <td>AI approximations of fluid dynamics and soft-body physics to bypass CPU-heavy math.</td>
+          <td>Rust integrating with Wasm-optimized ONNX runtime models.</td>
+          <td><span class="priority-badge p0">P0</span></td>
+        </tr>
+        <tr>
+          <td>TypeScript API Bindings</td>
+          <td>Developer-friendly API for instantiating worlds, bodies, and forces.</td>
+          <td>Auto-generated TS types derived from Rust source code.</td>
+          <td><span class="priority-badge p0">P0</span></td>
+        </tr>
+        <tr>
+          <td>AI Anti-Cheat Authority</td>
+          <td>Decentralized consensus detecting anomalous physics (e.g., speed hacks).</td>
+          <td>Federated learning model checking local states against statistical norms.</td>
+          <td><span class="priority-badge p1">P1</span></td>
+        </tr>
+        <tr>
+          <td>Zero-Latency Rollback</td>
+          <td>GGPO-style rollback netcode optimized for continuous 3D spatial environments.</td>
+          <td>Rust memory snapshotting and deterministic state recreation.</td>
+          <td><span class="priority-badge p1">P1</span></td>
+        </tr>
+        <tr>
+          <td>Dynamic Load Balancing</td>
+          <td>AI shifts physics boundaries — lagging devices offload to neighbors.</td>
+          <td>Graph neural networks assessing network health and device capability.</td>
+          <td><span class="priority-badge p2">P2</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ═══════════ PERSPECTIVES ═══════════ -->
+<section class="section" id="perspectives">
+  <div class="reveal">
+    <span class="section-label">Multi-Perspective Analysis</span>
+    <h2 class="section-title">Evaluated From Every Angle</h2>
+    <p class="section-desc">Aether-Net is designed to win the confidence of every stakeholder in the ecosystem.</p>
+  </div>
+  <div class="perspectives-grid">
+    <div class="persp-card reveal">
+      <div class="persp-avatar">👨‍💻</div>
+      <div class="persp-role">Enterprise Developer</div>
+      <h3>Cost-Saving Miracle</h3>
+      <p>Build a 1,000-player battle royale without provisioning a single AWS EC2 instance for physics. The TypeScript API means your existing web team ships without learning Rust.</p>
+    </div>
+    <div class="persp-card reveal">
+      <div class="persp-avatar">🎮</div>
+      <div class="persp-role">End-User / Gamer</div>
+      <h3>Zero Perceptible Lag</h3>
+      <p>Objects react instantaneously to inputs because AI predicts the outcome locally before the network confirms it. The decentralized nature is invisible — only seamless experience remains.</p>
+    </div>
+    <div class="persp-card reveal">
+      <div class="persp-avatar">🏢</div>
+      <div class="persp-role">Infrastructure Provider</div>
+      <h3>New B2B Revenue Stream</h3>
+      <p>Host dedicated "Super-Nodes" for enterprise clients with SLAs. Rather than losing hosting revenue, providers gain a premium tier for guaranteed stability in massive deployments.</p>
+    </div>
+    <div class="persp-card reveal">
+      <div class="persp-avatar">🔒</div>
+      <div class="persp-role">Security Auditor</div>
+      <h3>Memory-Safe by Design</h3>
+      <p>Rust's ownership model eliminates buffer overflows and RCE vulnerabilities endemic to C++ engines. Critical when running unverified, decentralized code on user devices.</p>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ═══════════ ROADMAP ═══════════ -->
+<section class="section" id="roadmap">
+  <div class="reveal">
+    <span class="section-label">Phased Roadmap</span>
+    <h2 class="section-title">From Foundation to Intelligence</h2>
+    <p class="section-desc">An 18-month journey from core engine to AI-powered decentralized physics network.</p>
+  </div>
+  <div class="roadmap">
+    <div class="roadmap-phase reveal">
+      <div class="roadmap-dot"></div>
+      <div class="roadmap-time">Phase 1 — Months 1–6</div>
+      <h3>Foundation</h3>
+      <p>Develop the core Rust rigid-body physics engine. Establish the WebAssembly compilation pipeline. Release initial TypeScript bindings and Three.js integration.</p>
+      <div class="milestone">
+        <span class="milestone-icon">🎯</span>
+        60fps stable execution of 5,000 rigid bodies in a single browser tab
+      </div>
+    </div>
+    <div class="roadmap-phase reveal">
+      <div class="roadmap-dot"></div>
+      <div class="roadmap-time">Phase 2 — Months 7–12</div>
+      <h3>Decentralization & Networking</h3>
+      <p>Implement P2P WebRTC data channels in Rust. Develop deterministic lockstep and state synchronization protocols.</p>
+      <div class="milestone">
+        <span class="milestone-icon">🎯</span>
+        5 browsers in different regions sharing physics for a unified 3D scene
+      </div>
+    </div>
+    <div class="roadmap-phase reveal">
+      <div class="roadmap-dot"></div>
+      <div class="roadmap-time">Phase 3 — Months 13–18</div>
+      <h3>AI Integration</h3>
+      <p>Train neural network models on offline deterministic physics data. Deploy localized AI Predictive State Resolution via ONNX. Implement federated AI anti-cheat mechanisms.</p>
+      <div class="milestone">
+        <span class="milestone-icon">🎯</span>
+        Bandwidth reduced by 80% via Neural Physics AI prediction
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ═══════════ MONETIZATION ═══════════ -->
+<section class="section" id="monetization">
+  <div class="reveal">
+    <span class="section-label">Go-to-Market Strategy</span>
+    <h2 class="section-title">Open Core. Enterprise Revenue.</h2>
+    <p class="section-desc">Ubiquitous adoption through a free core, followed by strategic ecosystem monetization.</p>
+  </div>
+  <div class="monetization-grid">
+    <div class="money-card reveal">
+      <span class="money-phase">Phase 1</span>
+      <div class="money-icon">🌐</div>
+      <h3>Free Open Core</h3>
+      <p>MIT/Apache 2.0 licensed engine and TS bindings. Viral tech demos, hackathon sponsorships. Become the default WebGL/WebGPU physics engine.</p>
+    </div>
+    <div class="money-card reveal">
+      <span class="money-phase">Phase 2</span>
+      <div class="money-icon">🏛️</div>
+      <h3>Enterprise & Managed</h3>
+      <p>Aether-Net Pro: high-performance "Super-Nodes" with guaranteed uptime. Commercial licensing for hyper-advanced AI models (water, cloth, destruction).</p>
+    </div>
+    <div class="money-card reveal">
+      <span class="money-phase">Phase 3</span>
+      <div class="money-icon">💎</div>
+      <h3>Compute Marketplace</h3>
+      <p>Micro-transaction layer where users donate idle compute for compensation. Game developers pay for distributed processing. Aether-Net earns a fractional fee per transaction.</p>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ═══════════ KPIs ═══════════ -->
+<section class="section" id="kpis">
+  <div class="reveal">
+    <span class="section-label">Key Performance Indicators</span>
+    <h2 class="section-title">Measuring What Matters</h2>
+  </div>
+  <div class="kpi-grid">
+    <div class="kpi-card reveal">
+      <div class="kpi-icon">📈</div>
+      <h4>Developer Adoption</h4>
+      <p>GitHub forks, NPM downloads, and live projects utilizing Aether-Net.</p>
+    </div>
+    <div class="kpi-card reveal">
+      <div class="kpi-icon">📡</div>
+      <h4>Bandwidth Efficiency</h4>
+      <p>Reduction in KB/s required for client synchronization vs. traditional servers.</p>
+    </div>
+    <div class="kpi-card reveal">
+      <div class="kpi-icon">🖥️</div>
+      <h4>Compute Offload</h4>
+      <p>% of physics processing handled by edge nodes vs. centralized fallback.</p>
+    </div>
+    <div class="kpi-card reveal">
+      <div class="kpi-icon">🎯</div>
+      <h4>AI Accuracy</h4>
+      <p>Neural Physics success rate predicting next state without server correction.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ CTA ═══════════ -->
+<section class="cta-section">
+  <div class="reveal">
+    <h2>Connect the Future Worlds</h2>
+    <p>Aether-Net is more than a physics engine. It's the infrastructure for the true, decentralized Metaverse.</p>
+    <div class="hero-buttons">
+      <button class="btn-primary" id="cta-start">Start Building</button>
+      <button class="btn-secondary" id="cta-blueprint">View Executive Blueprint</button>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ FOOTER ═══════════ -->
+<footer class="footer">
+  <ul class="footer-links">
+    <li><a href="#">Documentation</a></li>
+    <li><a href="#">GitHub</a></li>
+    <li><a href="#">Discord</a></li>
+    <li><a href="#">Blog</a></li>
+    <li><a href="#">License (MIT)</a></li>
+  </ul>
+  <p class="footer-copy">&copy; 2026 Aether-Net. Open-source core. Enterprise-grade performance.</p>
+</footer>
+
+<script src="main.js"></script>
+</body>
+</html>
