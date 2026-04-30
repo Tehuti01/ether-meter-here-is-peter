@@ -205,8 +205,8 @@ impl RigidBody {
     /// Check if velocity is below φ-sleep threshold
     pub fn check_sleeping(&mut self) {
         if self.body_type != BodyType::Dynamic { return; }
-        let lin = self.state.linear_velocity.length_squared();
-        let ang = self.state.angular_velocity.length_squared();
+        let lin = self.state.linear_velocity.length_sq();
+        let ang = self.state.angular_velocity.length_sq();
         let threshold_sq = phi::SLEEP_THRESHOLD * phi::SLEEP_THRESHOLD;
         if lin < threshold_sq && ang < threshold_sq {
             self.flags.sleep_counter += 1;

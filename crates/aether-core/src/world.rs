@@ -50,6 +50,7 @@ pub struct World {
     time: f64,
     /// Frame counter
     pub frame: u64,
+    pub constraint_count: usize,
 }
 
 impl World {
@@ -68,6 +69,7 @@ impl World {
             next_collider_id: 0,
             time: 0.0,
             frame: 0,
+            constraint_count: 0,
         }
     }
 
@@ -252,19 +254,19 @@ impl World {
                 let local_aabb = coll.shape.local_aabb();
                 // Transform AABB to world space (conservative)
                 let center = body.state.position + body.state.orientation.rotate_vec(coll.local_position);
-                let ext = local_aabb.extents();
+                let ext = local_aabb.half_extents();
                 // Rotate extents (conservative bound)
                 let rot = body.state.orientation.to_mat3();
                 let world_ext = Vec3::new(
-                    (rot.cols[0] * ext.x).abs().max_component()
-                        + (rot.cols[1] * ext.y).abs().max_component()
-                        + (rot.cols[2] * ext.z).abs().max_component(),
-                    (rot.cols[0] * ext.x).abs().max_component()
-                        + (rot.cols[1] * ext.y).abs().max_component()
-                        + (rot.cols[2] * ext.z).abs().max_component(),
-                    (rot.cols[0] * ext.x).abs().max_component()
-                        + (rot.cols[1] * ext.y).abs().max_component()
-                        + (rot.cols[2] * ext.z).abs().max_component(),
+                    (rot.cols[0] * ext.x).abs().max_comp()
+                        + (rot.cols[1] * ext.y).abs().max_comp()
+                        + (rot.cols[2] * ext.z).abs().max_comp(),
+                    (rot.cols[0] * ext.x).abs().max_comp()
+                        + (rot.cols[1] * ext.y).abs().max_comp()
+                        + (rot.cols[2] * ext.z).abs().max_comp(),
+                    (rot.cols[0] * ext.x).abs().max_comp()
+                        + (rot.cols[1] * ext.y).abs().max_comp()
+                        + (rot.cols[2] * ext.z).abs().max_comp(),
                 );
                 let aabb = AABB::from_center_half(center, world_ext);
                 result = result.merge(&aabb);
@@ -376,4 +378,7 @@ mod tests {
         world.create_body(Shape::Sphere { radius: 1.0 }, 2.0);
         assert_eq!(world.body_count(), 2);
     }
+}
+impl World {
+    pub fn constraint_count(&self) -> usize { self.constraints.len() }
 }
