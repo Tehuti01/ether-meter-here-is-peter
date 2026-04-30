@@ -64,8 +64,8 @@ export class ThreeAdapter {
    * Uses bulk transfer for optimal Wasm↔JS performance.
    */
   sync(): void {
-    const positions = this.world.getAllPositions();
-    const orientations = this.world.getAllOrientations();
+    const positions = this.world.getAllPositionsF32();
+    const orientations = this.world.getAllOrientationsF32();
 
     for (const binding of this.bindings) {
       const pi = binding.bodyId * 3;

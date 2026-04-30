@@ -78,7 +78,7 @@ pub fn collide(
 
 fn sphere_sphere(pos_a: Vec3, ra: f64, pos_b: Vec3, rb: f64) -> ContactManifold {
     let diff = pos_b - pos_a;
-    let dist_sq = diff.length_squared();
+    let dist_sq = diff.length_sq();
     let sum_r = ra + rb;
     if dist_sq > sum_r * sum_r || dist_sq < 1e-14 {
         return ContactManifold::empty();
@@ -122,7 +122,7 @@ fn sphere_cuboid(
         local_center.z.clamp(-half.z, half.z),
     );
     let diff = local_center - closest;
-    let dist_sq = diff.length_squared();
+    let dist_sq = diff.length_sq();
     if dist_sq > radius * radius {
         return ContactManifold::empty();
     }
@@ -199,7 +199,7 @@ fn cuboid_cuboid(
     for i in 0..3 {
         for j in 0..3 {
             let axis = axes_a[i].cross(axes_b[j]);
-            if axis.length_squared() < 1e-10 { continue; }
+            if axis.length_sq() < 1e-10 { continue; }
             let axis = axis.normalize();
             let (depth, sep) = sat_overlap(&axis, &d, &axes_a, &ha_arr, &axes_b, &hb_arr);
             if depth < 0.0 { return ContactManifold::empty(); }

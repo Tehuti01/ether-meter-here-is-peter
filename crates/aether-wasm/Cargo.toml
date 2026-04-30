@@ -22,3 +22,6 @@ features = [
     "Performance",
     "Window",
 ]
+
+[package.metadata.wasm-pack.profile.release]
+wasm-opt = false

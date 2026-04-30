@@ -1,130 +1,212 @@
-//! # Constraint Solver
+//! # Constraint Solver — Sequential Impulse + Warm-Starting + Position Correction
 //!
-//! Sequential impulse constraint solver with φ-governed iteration count,
-//! Baumgarte stabilization, and warm-starting.
+//! Algorithm: Sequential Impulse (Erin Catto, GDC 2006).
+//! Enhancements over the baseline:
+//!   - **Warm-starting** — accumulated impulses from the previous frame are
+//!     re-applied immediately, dramatically cutting iteration count.
+//!   - **Two-tangent friction** — Coulomb cone clamped on two independent
+//!     tangent axes for physically plausible behaviour.
+//!   - **Speculative restitution** — velocity-threshold guard prevents
+//!     jitter on slow contacts.
+//!   - **φ-governed iteration count** — SOLVER_ITERATIONS = 8 (Fib(6)).
+//!   - **Baumgarte stabilisation** — φ-scaled bias velocity resolves drift.
 
 use crate::math::Vec3;
 use crate::narrowphase::Contact;
 use crate::body::RigidBody;
 use crate::phi;
 
-/// Cached impulse for warm-starting across frames.
+// ─────────────────────────────── ContactConstraint ───────────────────────────────
+
+/// Persistent contact constraint — retains warm-start impulses across calls.
 #[derive(Debug, Clone, Copy)]
 pub struct ContactConstraint {
     pub body_a: u32,
     pub body_b: u32,
     pub contact: Contact,
+    /// Accumulated normal impulse (non-negative — no pull)
     pub normal_impulse: f64,
+    /// Accumulated friction impulse along tangent 1
     pub tangent_impulse_1: f64,
+    /// Accumulated friction impulse along tangent 2
     pub tangent_impulse_2: f64,
     pub restitution: f64,
     pub friction: f64,
 }
 
 impl ContactConstraint {
-    pub fn new(body_a: u32, body_b: u32, contact: Contact, restitution: f64, friction: f64) -> Self {
+    #[inline]
+    pub fn new(a: u32, b: u32, contact: Contact, restitution: f64, friction: f64) -> Self {
         Self {
-            body_a, body_b, contact,
+            body_a: a, body_b: b, contact,
             normal_impulse: 0.0,
             tangent_impulse_1: 0.0,
             tangent_impulse_2: 0.0,
-            restitution,
-            friction,
+            restitution, friction,
         }
     }
 }
 
+// ─────────────────────────────── Solver entry point ───────────────────────────────
+
 /// Solve all contact constraints using sequential impulses.
 ///
-/// Iteration count is φ-governed (SOLVER_ITERATIONS = 8, a Fibonacci number).
-/// Baumgarte factor is φ-scaled for optimal stabilization.
-pub fn solve_contacts(bodies: &mut [RigidBody], constraints: &mut [ContactConstraint], dt: f64) {
-    if constraints.is_empty() || dt < 1e-12 { return; }
+/// `dt` — sub-step delta (NOT the full frame delta).
+pub fn solve_contacts(
+    bodies: &mut [RigidBody],
+    constraints: &mut [ContactConstraint],
+    dt: f64,
+) {
+    if constraints.is_empty() || dt < 1e-14 { return; }
     let inv_dt = 1.0 / dt;
 
+    // ── Phase 0: Warm-start — re-apply last frame's cached impulses ──────────
+    for c in constraints.iter() {
+        let n = c.contact.normal;
+        let (t1, t2) = tangent_basis(n);
+        let r_a = c.contact.point_a - bodies[c.body_a as usize].state.position;
+        let r_b = c.contact.point_b - bodies[c.body_b as usize].state.position;
+        let impulse = n * c.normal_impulse + t1 * c.tangent_impulse_1 + t2 * c.tangent_impulse_2;
+        apply_impulse(bodies, c.body_a as usize, c.body_b as usize, impulse, r_a, r_b);
+    }
+
+    // ── Phase 1: Velocity iterations ─────────────────────────────────────────
     for _iter in 0..phi::SOLVER_ITERATIONS {
-        for constraint in constraints.iter_mut() {
-            let (a_idx, b_idx) = (constraint.body_a as usize, constraint.body_b as usize);
-            let contact = &constraint.contact;
-            let n = contact.normal;
+        for c in constraints.iter_mut() {
+            let (a, b) = (c.body_a as usize, c.body_b as usize);
+            let n = c.contact.normal;
+            let r_a = c.contact.point_a - bodies[a].state.position;
+            let r_b = c.contact.point_b - bodies[b].state.position;
 
-            // Get body properties
-            let inv_mass_a = bodies[a_idx].mass_props.inv_mass;
-            let inv_mass_b = bodies[b_idx].mass_props.inv_mass;
-            let inv_i_a = bodies[a_idx].mass_props.inv_inertia_world(&bodies[a_idx].state.orientation);
-            let inv_i_b = bodies[b_idx].mass_props.inv_inertia_world(&bodies[b_idx].state.orientation);
+            // ── Normal impulse ────────────────────────────────────────────────
+            let vel_a = point_vel(&bodies[a], r_a);
+            let vel_b = point_vel(&bodies[b], r_b);
+            let rel_vel_n = (vel_b - vel_a).dot(n);
 
-            let r_a = contact.point_a - bodies[a_idx].state.position;
-            let r_b = contact.point_b - bodies[b_idx].state.position;
+            let k_n = effective_mass(bodies, a, b, n, r_a, r_b);
+            if k_n < 1e-20 { continue; }
 
-            // ─── Normal impulse ───
-            let vel_a = bodies[a_idx].state.linear_velocity + bodies[a_idx].state.angular_velocity.cross(r_a);
-            let vel_b = bodies[b_idx].state.linear_velocity + bodies[b_idx].state.angular_velocity.cross(r_b);
-            let rel_vel = vel_b - vel_a;
-            let normal_vel = rel_vel.dot(n);
-
-            // Effective mass along normal
-            let rn_a = r_a.cross(n);
-            let rn_b = r_b.cross(n);
-            let k_normal = inv_mass_a + inv_mass_b
-                + rn_a.dot(inv_i_a.mul_vec(rn_a))
-                + rn_b.dot(inv_i_b.mul_vec(rn_b));
-
-            if k_normal < 1e-14 { continue; }
-
-            // Baumgarte stabilization — bias velocity to resolve penetration
+            // Baumgarte position bias
             let bias = phi::BAUMGARTE_FACTOR * inv_dt
-                * (contact.depth - phi::PENETRATION_SLOP).max(0.0);
+                * (c.contact.depth - phi::PENETRATION_SLOP).max(0.0);
 
-            // Restitution
-            let restitution_bias = if normal_vel < -1.0 {
-                -constraint.restitution * normal_vel
+            // Speculative restitution — only when separating fast enough
+            let restitution_bias = if rel_vel_n < -phi::SLEEP_THRESHOLD {
+                c.restitution * (-rel_vel_n)
             } else { 0.0 };
 
-            let lambda = -(normal_vel + bias + restitution_bias) / k_normal;
-            let old_impulse = constraint.normal_impulse;
-            constraint.normal_impulse = (old_impulse + lambda).max(0.0);
-            let impulse_n = n * (constraint.normal_impulse - old_impulse);
+            let lambda = -(rel_vel_n - bias + restitution_bias) / k_n;
+            let old = c.normal_impulse;
+            c.normal_impulse = (old + lambda).max(0.0);
+            let impulse_n = n * (c.normal_impulse - old);
+            apply_impulse(bodies, a, b, impulse_n, r_a, r_b);
 
-            // Apply normal impulse
-            apply_impulse(bodies, a_idx, b_idx, impulse_n, r_a, r_b);
+            // ── Friction impulses (two tangents) ─────────────────────────────
+            let (t1, t2) = tangent_basis(n);
+            let max_friction = c.friction * c.normal_impulse;
 
-            // ─── Friction impulse ───
-            // Recompute relative velocity after normal impulse
-            let vel_a2 = bodies[a_idx].state.linear_velocity + bodies[a_idx].state.angular_velocity.cross(r_a);
-            let vel_b2 = bodies[b_idx].state.linear_velocity + bodies[b_idx].state.angular_velocity.cross(r_b);
-            let rel_vel2 = vel_b2 - vel_a2;
-            let tangent_vel = rel_vel2 - n * rel_vel2.dot(n);
-            let tangent_speed = tangent_vel.length();
-            if tangent_speed > 1e-10 {
-                let t = tangent_vel * (1.0 / tangent_speed);
-                let rt_a = r_a.cross(t);
-                let rt_b = r_b.cross(t);
-                let k_tangent = inv_mass_a + inv_mass_b
-                    + rt_a.dot(inv_i_a.mul_vec(rt_a))
-                    + rt_b.dot(inv_i_b.mul_vec(rt_b));
+            // Tangent 1
+            let rv1 = (point_vel(&bodies[b], r_b) - point_vel(&bodies[a], r_a)).dot(t1);
+            let k_t1 = effective_mass(bodies, a, b, t1, r_a, r_b);
+            if k_t1 > 1e-20 {
+                let l1 = -rv1 / k_t1;
+                let old1 = c.tangent_impulse_1;
+                c.tangent_impulse_1 = (old1 + l1).clamp(-max_friction, max_friction);
+                apply_impulse(bodies, a, b, t1 * (c.tangent_impulse_1 - old1), r_a, r_b);
+            }
 
-                if k_tangent > 1e-14 {
-                    let lambda_t = -tangent_speed / k_tangent;
-                    let max_friction = constraint.friction * constraint.normal_impulse;
-                    let clamped = lambda_t.clamp(-max_friction, max_friction);
-                    let impulse_t = t * clamped;
-                    apply_impulse(bodies, a_idx, b_idx, impulse_t, r_a, r_b);
-                }
+            // Tangent 2
+            let rv2 = (point_vel(&bodies[b], r_b) - point_vel(&bodies[a], r_a)).dot(t2);
+            let k_t2 = effective_mass(bodies, a, b, t2, r_a, r_b);
+            if k_t2 > 1e-20 {
+                let l2 = -rv2 / k_t2;
+                let old2 = c.tangent_impulse_2;
+                c.tangent_impulse_2 = (old2 + l2).clamp(-max_friction, max_friction);
+                apply_impulse(bodies, a, b, t2 * (c.tangent_impulse_2 - old2), r_a, r_b);
             }
         }
     }
 }
 
+// ─────────────────────────────── Helpers ───────────────────────────────
+
+/// Velocity of a point on body `b` at offset `r` from CoM.
+#[inline(always)]
+fn point_vel(b: &RigidBody, r: Vec3) -> Vec3 {
+    b.state.linear_velocity + b.state.angular_velocity.cross(r)
+}
+
+/// Generalised inverse mass along an axis (scalar effective mass denominator).
+#[inline]
+fn effective_mass(bodies: &[RigidBody], a: usize, b: usize, axis: Vec3, r_a: Vec3, r_b: Vec3) -> f64 {
+    let inv_ma = bodies[a].mass_props.inv_mass;
+    let inv_mb = bodies[b].mass_props.inv_mass;
+    let inv_ia = bodies[a].mass_props.inv_inertia_world(&bodies[a].state.orientation);
+    let inv_ib = bodies[b].mass_props.inv_inertia_world(&bodies[b].state.orientation);
+    let ra_x_n = r_a.cross(axis);
+    let rb_x_n = r_b.cross(axis);
+    inv_ma + inv_mb
+        + ra_x_n.dot(inv_ia.mul_vec(ra_x_n))
+        + rb_x_n.dot(inv_ib.mul_vec(rb_x_n))
+}
+
+/// Apply an impulse (Newton's 3rd law) — bodies may be static (inv_mass=0).
 #[inline]
 fn apply_impulse(bodies: &mut [RigidBody], a: usize, b: usize, impulse: Vec3, r_a: Vec3, r_b: Vec3) {
-    let inv_mass_a = bodies[a].mass_props.inv_mass;
-    let inv_mass_b = bodies[b].mass_props.inv_mass;
-    let inv_i_a = bodies[a].mass_props.inv_inertia_world(&bodies[a].state.orientation);
-    let inv_i_b = bodies[b].mass_props.inv_inertia_world(&bodies[b].state.orientation);
+    {
+        let ba = &mut bodies[a];
+        let inv_ma = ba.mass_props.inv_mass;
+        if inv_ma > 0.0 {
+            let inv_ia = ba.mass_props.inv_inertia_world(&ba.state.orientation);
+            ba.state.linear_velocity -= impulse * inv_ma;
+            ba.state.angular_velocity -= inv_ia.mul_vec(r_a.cross(impulse));
+        }
+    }
+    {
+        let bb = &mut bodies[b];
+        let inv_mb = bb.mass_props.inv_mass;
+        if inv_mb > 0.0 {
+            let inv_ib = bb.mass_props.inv_inertia_world(&bb.state.orientation);
+            bb.state.linear_velocity += impulse * inv_mb;
+            bb.state.angular_velocity += inv_ib.mul_vec(r_b.cross(impulse));
+        }
+    }
+}
 
-    bodies[a].state.linear_velocity -= impulse * inv_mass_a;
-    bodies[a].state.angular_velocity -= inv_i_a.mul_vec(r_a.cross(impulse));
-    bodies[b].state.linear_velocity += impulse * inv_mass_b;
-    bodies[b].state.angular_velocity += inv_i_b.mul_vec(r_b.cross(impulse));
+/// Build two orthogonal tangent vectors for a given normal.
+/// Uses Duff/Frisvad fast method when |n.z| < 1/√2, Gram-Schmidt otherwise.
+#[inline]
+fn tangent_basis(n: Vec3) -> (Vec3, Vec3) {
+    let t1 = if n.z.abs() < 0.707_106_78 {
+        Vec3::new(-n.y, n.x, 0.0).normalize()
+    } else {
+        Vec3::new(0.0, -n.z, n.y).normalize()
+    };
+    let t2 = n.cross(t1);
+    (t1, t2)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::math::Vec3;
+
+    #[test]
+    fn tangent_basis_orthonormal() {
+        let n = Vec3::new(0.0, 1.0, 0.0);
+        let (t1, t2) = tangent_basis(n);
+        assert!(t1.dot(n).abs() < 1e-10);
+        assert!(t2.dot(n).abs() < 1e-10);
+        assert!(t1.dot(t2).abs() < 1e-10);
+        assert!((t1.length() - 1.0).abs() < 1e-10);
+        assert!((t2.length() - 1.0).abs() < 1e-10);
+    }
+
+    #[test]
+    fn tangent_basis_diagonal_normal() {
+        let n = Vec3::new(1.0, 1.0, 1.0).normalize();
+        let (t1, t2) = tangent_basis(n);
+        assert!(t1.dot(n).abs() < 1e-10);
+        assert!(t2.dot(n).abs() < 1e-10);
+    }
 }
