@@ -115,105 +115,113 @@ if (heroSub) {
   type();
 }
 
-// ─── Stunning 3D Background Simulation (The "Miracle") ───
+// ─── Flowing 3D Wave Field ───
 import * as THREE from 'https://cdn.skypack.dev/three@0.136.0';
 
-let world, scene, camera, renderer, instancedMesh, positions, dummy;
+let scene, camera, renderer, waveMesh, ribbonMesh, positions, dummy, colors;
 
-async function initPhysics() {
-  try {
-    const { AetherWorld } = await import('./ts/src/pkg/aether_wasm.js');
-    await AetherWorld.default('./ts/src/pkg/aether_wasm_bg.wasm');
-    // Using default export wasm init, but we'll adapt to AetherWorld.create signature if using ES modules natively
-    
-    // Fallback since we aren't bundling TS: 
-    // We will build a pure visual representation to mimic the engine's majesty
-    initVisuals();
-  } catch (e) {
-    console.error("WASM loading bypassed for direct visual demo", e);
-    initVisuals();
-  }
-}
+const PHI = 1.6180339887;
+const GOLDEN_ANGLE = 2.39996323;
+const COUNT = 800;
 
 function initVisuals() {
   const container = document.createElement('div');
   Object.assign(container.style, {
     position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
-    zIndex: 0, pointerEvents: 'none', opacity: '0.85'
+    zIndex: 0, pointerEvents: 'none',
   });
   document.body.prepend(container);
 
   scene = new THREE.Scene();
-  scene.fog = new THREE.FogExp2(0x05080f, 0.02);
+  scene.fog = new THREE.FogExp2(0x05080f, 0.015);
 
-  camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
-  camera.position.set(0, 15, 30);
+  camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 1200);
+  camera.position.set(0, 18, 40);
   camera.lookAt(0, 0, 0);
 
-  renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true, powerPreference: "high-performance" });
+  renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true, powerPreference: 'high-performance' });
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.2;
   container.appendChild(renderer.domElement);
 
-  // Lighting
-  const ambient = new THREE.AmbientLight(0x0a0e17, 2.0);
-  scene.add(ambient);
-  
-  const d1 = new THREE.DirectionalLight(0x00f0d0, 1.5); // Teal
-  d1.position.set(-10, 20, 10);
-  scene.add(d1);
+  // Lighting — three-point cinematic
+  scene.add(new THREE.AmbientLight(0x0a0e17, 1.5));
 
-  const d2 = new THREE.DirectionalLight(0xff2a85, 1.5); // Magenta
-  d2.position.set(10, 5, -10);
-  scene.add(d2);
-  
-  const d3 = new THREE.DirectionalLight(0xd4af37, 1.0); // Gold
-  d3.position.set(0, -10, 10);
-  scene.add(d3);
+  const keyLight = new THREE.PointLight(0x00f0d0, 3, 80);
+  keyLight.position.set(-15, 25, 15);
+  scene.add(keyLight);
 
-  // Instanced Meshes (The "Miracle" Golden Ratio distribution)
-  const count = 555; // 555 times better
-  const geometry = new THREE.IcosahedronGeometry(0.4, 0);
-  const material = new THREE.MeshPhysicalMaterial({
-    color: 0xffffff, metalness: 0.8, roughness: 0.2,
-    transmission: 0.9, thickness: 0.5,
-    envMapIntensity: 1.0,
-    clearcoat: 1.0, clearcoatRoughness: 0.1
+  const fillLight = new THREE.PointLight(0xff2a85, 2, 80);
+  fillLight.position.set(20, 8, -15);
+  scene.add(fillLight);
+
+  const rimLight = new THREE.PointLight(0xd4af37, 2, 60);
+  rimLight.position.set(0, -15, 20);
+  scene.add(rimLight);
+
+  // Wave mesh — instanced spheres with per-instance colour
+  const geo = new THREE.SphereGeometry(0.25, 8, 6);
+  const mat = new THREE.MeshPhysicalMaterial({
+    vertexColors: true,
+    metalness: 0.6,
+    roughness: 0.25,
+    clearcoat: 0.8,
+    clearcoatRoughness: 0.15,
+    transparent: true,
+    opacity: 0.85,
   });
 
-  instancedMesh = new THREE.InstancedMesh(geometry, material, count);
+  waveMesh = new THREE.InstancedMesh(geo, mat, COUNT);
+  waveMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
   dummy = new THREE.Object3D();
   positions = [];
 
-  const PHI = 1.6180339887;
-  const GOLDEN_ANGLE = 2.39996323;
-
-  for (let i = 0; i < count; i++) {
-    // Golden spiral sphere distribution
-    const y = 1 - (i / (count - 1)) * 2;
-    const radius = Math.sqrt(1 - y * y);
+  // Distribute in a golden-spiral disc
+  for (let i = 0; i < COUNT; i++) {
+    const t = i / (COUNT - 1);
+    const r = Math.sqrt(t) * 28;
     const theta = GOLDEN_ANGLE * i;
-
-    const x = Math.cos(theta) * radius;
-    const z = Math.sin(theta) * radius;
-
-    const scale = 18 + Math.random() * 5;
-    
-    positions.push({
-      x: x * scale, y: y * scale, z: z * scale,
-      rx: Math.random() * Math.PI, ry: Math.random() * Math.PI,
-      vx: (Math.random() - 0.5) * 0.01,
-      vy: (Math.random() - 0.5) * 0.01,
-      vz: (Math.random() - 0.5) * 0.01,
-    });
-
-    dummy.position.set(x * scale, y * scale, z * scale);
-    dummy.rotation.set(positions[i].rx, positions[i].ry, 0);
-    dummy.updateMatrix();
-    instancedMesh.setMatrixAt(i, dummy.matrix);
+    const bx = Math.cos(theta) * r;
+    const bz = Math.sin(theta) * r;
+    positions.push({ bx, bz, phase: i * PHI, speed: 0.5 + Math.random() * 0.5 });
   }
 
-  scene.add(instancedMesh);
+  // Per-instance colour attribute
+  const colArr = new Float32Array(COUNT * 3);
+  const teal   = new THREE.Color(0x00f0d0);
+  const gold   = new THREE.Color(0xf9d75c);
+  const magenta = new THREE.Color(0xff2a85);
+  const palette = [teal, gold, magenta];
+  for (let i = 0; i < COUNT; i++) {
+    const c = palette[i % 3].clone().lerp(palette[(i + 1) % 3], (i % 13) / 13);
+    colArr[i * 3]     = c.r;
+    colArr[i * 3 + 1] = c.g;
+    colArr[i * 3 + 2] = c.b;
+  }
+  geo.setAttribute('color', new THREE.InstancedBufferAttribute(colArr, 3));
+
+  scene.add(waveMesh);
+
+  // Ribbon lines — connecting particles with flowing curves
+  const ribbonCount = 60;
+  const ribbonGeo = new THREE.BufferGeometry();
+  const ribbonPts = [];
+  for (let r = 0; r < ribbonCount; r++) {
+    const startIdx = Math.floor(Math.random() * COUNT);
+    for (let s = 0; s < 8; s++) {
+      const idx = (startIdx + s * 7) % COUNT;
+      const p = positions[idx];
+      ribbonPts.push(new THREE.Vector3(p.bx, 0, p.bz));
+    }
+  }
+  ribbonGeo.setFromPoints(ribbonPts);
+  const ribbonMat = new THREE.LineBasicMaterial({
+    color: 0x00f0d0, transparent: true, opacity: 0.08, linewidth: 1,
+  });
+  ribbonMesh = new THREE.LineSegments(ribbonGeo, ribbonMat);
+  scene.add(ribbonMesh);
 
   window.addEventListener('resize', () => {
     camera.aspect = window.innerWidth / window.innerHeight;
@@ -221,50 +229,73 @@ function initVisuals() {
     renderer.setSize(window.innerWidth, window.innerHeight);
   });
 
-  animateVisuals();
+  animate();
 }
 
 let time = 0;
-function animateVisuals() {
-  requestAnimationFrame(animateVisuals);
-  time += 0.005;
+function animate() {
+  requestAnimationFrame(animate);
+  time += 0.008;
 
+  // Mouse-reactive camera
   const mX = mx !== -999 ? (mx / window.innerWidth) * 2 - 1 : 0;
   const mY = my !== -999 ? -(my / window.innerHeight) * 2 + 1 : 0;
+  camera.position.x += (mX * 8 - camera.position.x) * 0.03;
+  camera.position.y += (18 + mY * 6 - camera.position.y) * 0.03;
+  camera.lookAt(0, 2, 0);
 
-  camera.position.x += (mX * 5 - camera.position.x) * 0.05;
-  camera.position.y += (15 + mY * 5 - camera.position.y) * 0.05;
-  camera.lookAt(0, 0, 0);
+  // Global slow orbit
+  const orbit = time * 0.15;
 
-  for (let i = 0; i < positions.length; i++) {
+  for (let i = 0; i < COUNT; i++) {
     const p = positions[i];
-    
-    // Orbital mechanics
-    p.x += p.vx; p.y += p.vy; p.z += p.vz;
-    p.rx += 0.01; p.ry += 0.01;
-    
-    // Gentle golden ratio swirling
-    const angle = time * 0.5;
-    const s = Math.sin(angle * (i % 3 === 0 ? 1 : -1));
-    const c = Math.cos(angle * (i % 2 === 0 ? 1 : -1));
 
-    dummy.position.set(
-      p.x * c - p.z * s,
-      p.y + Math.sin(time * 2 + i) * 1.5,
-      p.x * s + p.z * c
-    );
-    
-    dummy.rotation.set(p.rx, p.ry, 0);
+    // Wave displacement: stacked sine waves for organic flow
+    const wave1 = Math.sin(p.bx * 0.15 + time * p.speed * 2) * 3;
+    const wave2 = Math.cos(p.bz * 0.12 + time * p.speed * 1.7 + p.phase) * 2;
+    const wave3 = Math.sin((p.bx + p.bz) * 0.08 + time * 1.3) * 1.5;
+    const y = wave1 + wave2 + wave3;
+
+    // Gentle orbital rotation of the entire field
+    const rx = p.bx * Math.cos(orbit) - p.bz * Math.sin(orbit);
+    const rz = p.bx * Math.sin(orbit) + p.bz * Math.cos(orbit);
+
+    // Scale pulses with the wave height
+    const s = 0.6 + Math.abs(y) * 0.12;
+
+    dummy.position.set(rx, y, rz);
+    dummy.scale.set(s, s, s);
+    dummy.rotation.set(time + i * 0.01, time * 0.7 + i * 0.005, 0);
     dummy.updateMatrix();
-    instancedMesh.setMatrixAt(i, dummy.matrix);
+    waveMesh.setMatrixAt(i, dummy.matrix);
   }
 
-  instancedMesh.instanceMatrix.needsUpdate = true;
+  waveMesh.instanceMatrix.needsUpdate = true;
+
+  // Update ribbon positions to follow wave
+  const rPositions = ribbonMesh.geometry.attributes.position.array;
+  for (let i = 0; i < rPositions.length / 3; i++) {
+    const idx = i % COUNT;
+    const p = positions[idx];
+    const wave = Math.sin(p.bx * 0.15 + time * p.speed * 2) * 3
+               + Math.cos(p.bz * 0.12 + time * p.speed * 1.7 + p.phase) * 2;
+    const rx = p.bx * Math.cos(orbit) - p.bz * Math.sin(orbit);
+    const rz = p.bx * Math.sin(orbit) + p.bz * Math.cos(orbit);
+    rPositions[i * 3]     = rx;
+    rPositions[i * 3 + 1] = wave;
+    rPositions[i * 3 + 2] = rz;
+  }
+  ribbonMesh.geometry.attributes.position.needsUpdate = true;
+
+  // Cycle ribbon colour
+  const hue = (time * 0.02) % 1;
+  ribbonMesh.material.color.setHSL(hue, 0.7, 0.5);
+  ribbonMesh.material.opacity = 0.06 + Math.sin(time) * 0.03;
+
   renderer.render(scene, camera);
 }
 
-// Start
-initPhysics();
+initVisuals();
 
 // ─── Table row hover glow ───
 document.querySelectorAll('.features-table tbody tr').forEach(row => {

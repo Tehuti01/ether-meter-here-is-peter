@@ -23,6 +23,8 @@ interface WasmWorld {
   setVelocity(id: number, vx: number, vy: number, vz: number): void;
   applyForce(id: number, fx: number, fy: number, fz: number): void;
   applyImpulse(id: number, ix: number, iy: number, iz: number): void;
+  setResonanceIntensity(intensity: number): void;
+  getResonanceIntensity(): number;
   getPosition(id: number): Float64Array;
   getOrientation(id: number): Float64Array;
   getVelocity(id: number): Float64Array;
@@ -124,6 +126,9 @@ export class AetherWorld {
   setVelocity(id: number, vel: Vec3): void { this.wasm.setVelocity(id, vel.x, vel.y, vel.z); }
   applyForce(id: number, force: Vec3): void { this.wasm.applyForce(id, force.x, force.y, force.z); }
   applyImpulse(id: number, impulse: Vec3): void { this.wasm.applyImpulse(id, impulse.x, impulse.y, impulse.z); }
+
+  setResonanceIntensity(intensity: number): void { this.wasm.setResonanceIntensity(intensity); }
+  getResonanceIntensity(): number { return this.wasm.getResonanceIntensity(); }
 
   /**
    * Ultra-fast Zero-Copy Buffer getters for WebGL / WebGPU engines (Three.js, Babylon.js)

@@ -21,6 +21,7 @@ pub struct WorldConfig {
     pub angular_damping: f64,
     pub sleep_enabled: bool,
     pub broadphase_cell_size: f64,
+    pub resonance_intensity: f64,
 }
 
 impl Default for WorldConfig {
@@ -33,6 +34,7 @@ impl Default for WorldConfig {
             angular_damping: phi::ANGULAR_DAMPING,
             sleep_enabled: true,
             broadphase_cell_size: phi::PHI * 2.0,
+            resonance_intensity: 0.0,
         }
     }
 }
@@ -44,6 +46,7 @@ pub struct World {
     pub colliders: Vec<Collider>,
     broadphase: SpatialGrid,
     constraints: Vec<ContactConstraint>,
+    pub resonance: crate::resonance::ResonanceField,
     next_body_id: u32,
     next_collider_id: u32,
     /// Simulation time accumulator
@@ -59,12 +62,15 @@ impl World {
     }
 
     pub fn with_config(config: WorldConfig) -> Self {
+        let mut res = crate::resonance::ResonanceField::new();
+        res.intensity = config.resonance_intensity;
         Self {
             broadphase: SpatialGrid::new(config.broadphase_cell_size),
             config,
             bodies: Vec::with_capacity(256),
             colliders: Vec::with_capacity(256),
             constraints: Vec::with_capacity(512),
+            resonance: res,
             next_body_id: 0,
             next_collider_id: 0,
             time: 0.0,
@@ -151,6 +157,9 @@ impl World {
     /// while keeping the per-frame API simple.
     pub fn step(&mut self, dt: f64) {
         if dt <= 0.0 { return; }
+        
+        self.resonance.step(dt);
+        
         let sub_dt = dt / self.config.substeps as f64;
 
         for _ in 0..self.config.substeps {
@@ -190,6 +199,7 @@ impl World {
 
     fn integrate_forces(&mut self, dt: f64) {
         let gravity = self.config.gravity;
+        let is_res_active = self.resonance.active && self.resonance.intensity > 1e-6;
         for body in &mut self.bodies {
             if !body.is_dynamic() || body.flags.sleeping { continue; }
             // Save previous state for interpolation
@@ -197,6 +207,11 @@ impl World {
             // Gravity
             if body.flags.gravity_enabled {
                 body.state.linear_velocity += gravity * dt;
+            }
+            // HZ 963 Resonance
+            if is_res_active {
+                let res_force = self.resonance.evaluate_force(body.state.position);
+                body.state.linear_velocity += res_force * (body.mass_props.inv_mass * dt);
             }
             // External forces
             body.state.linear_velocity += body.force_accumulator * (body.mass_props.inv_mass * dt);

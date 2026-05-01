@@ -90,6 +90,18 @@ impl AetherWorld {
         self.world.apply_impulse(BodyId(body_id), Vec3::new(ix, iy, iz));
     }
 
+    // ─── IAS AI Resonance Field ──────────────────────────────────────────────
+
+    #[wasm_bindgen(js_name = setResonanceIntensity)]
+    pub fn set_resonance_intensity(&mut self, intensity: f64) {
+        self.world.resonance.intensity = intensity;
+    }
+
+    #[wasm_bindgen(js_name = getResonanceIntensity)]
+    pub fn get_resonance_intensity(&self) -> f64 {
+        self.world.resonance.intensity
+    }
+
     // ─── Per-Body Getters ─────────────────────────────────────────────────────
 
     #[wasm_bindgen(js_name = getPosition)]

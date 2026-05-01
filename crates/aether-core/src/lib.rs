@@ -36,6 +36,7 @@ pub mod body;
 pub mod broadphase;
 pub mod narrowphase;
 pub mod solver;
+pub mod resonance;
 pub mod world;
 
 /// Prelude — import everything you need with `use aether_core::prelude::*`
@@ -44,5 +45,6 @@ pub mod prelude {
     pub use crate::math::{Vec3, Quat, Mat3, AABB};
     pub use crate::body::{BodyId, BodyType, RigidBody};
     pub use crate::collider::{ColliderId, Collider, Shape};
+    pub use crate::resonance::{ResonanceField, HZ_963};
     pub use crate::world::{World, WorldConfig};
 }

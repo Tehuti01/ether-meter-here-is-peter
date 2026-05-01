@@ -85,8 +85,32 @@ body {
   filter: drop-shadow(0 0 30px var(--teal-glow)) drop-shadow(0 0 60px var(--magenta-glow));
 }
 @keyframes pulse-glow {
-  0%, 100% { filter: drop-shadow(0 0 30px var(--teal-glow)) drop-shadow(0 0 60px var(--magenta-glow)); transform: scale(1); }
-  50% { filter: drop-shadow(0 0 50px var(--teal-glow)) drop-shadow(0 0 90px var(--magenta-glow)); transform: scale(1.03); }
+  0%, 100% { filter: drop-shadow(0 0 30px var(--teal-glow)) drop-shadow(0 0 60px var(--magenta-glow)); transform: scale(1) rotate(0deg); }
+  50% { filter: drop-shadow(0 0 50px var(--teal-glow)) drop-shadow(0 0 90px var(--magenta-glow)); transform: scale(1.05) rotate(3deg); }
+}
+@keyframes gradient-flow {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+@keyframes aurora {
+  0%, 100% { opacity: 0.3; transform: translateX(-30%) rotate(-5deg); }
+  33% { opacity: 0.6; transform: translateX(0%) rotate(0deg); }
+  66% { opacity: 0.4; transform: translateX(30%) rotate(5deg); }
+}
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-12px); }
+}
+@keyframes wave-border {
+  0% { border-color: rgba(0, 240, 208, 0.2); }
+  33% { border-color: rgba(212, 175, 55, 0.3); }
+  66% { border-color: rgba(255, 42, 133, 0.2); }
+  100% { border-color: rgba(0, 240, 208, 0.2); }
 }
 .hero-tag {
   display: inline-block; padding: 0.4rem 1.2rem; border-radius: 50px;
@@ -99,9 +123,11 @@ body {
   line-height: 1.05; margin-bottom: 1.5rem;
 }
 .hero h1 .gradient-text {
-  background: linear-gradient(135deg, var(--teal), var(--gold-bright), var(--magenta));
+  background: linear-gradient(135deg, var(--teal), var(--gold-bright), var(--magenta), var(--teal));
+  background-size: 300% 300%;
   -webkit-background-clip: text; -webkit-text-fill-color: transparent;
   background-clip: text;
+  animation: gradient-flow 6s ease infinite;
 }
 .hero-sub {
   font-size: 1.15rem; color: var(--text-secondary); max-width: 680px;
@@ -407,10 +433,65 @@ body {
 .code-body .ty { color: #7ec8e3; }
 .code-body .num { color: #d19a66; }
 
-/* ─── DIVIDER ─── */
+/* ─── WAVE DIVIDER ─── */
 .divider {
-  height: 1px; max-width: 1200px; margin: 0 auto;
-  background: linear-gradient(90deg, transparent, var(--border), transparent);
+  height: 60px; max-width: 100%; margin: 0 auto; position: relative; overflow: hidden;
+  background: transparent;
+}
+.divider::before {
+  content: ''; position: absolute; top: 50%; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--teal), var(--gold), var(--magenta), var(--teal), transparent);
+  background-size: 200% 100%;
+  animation: gradient-flow 8s linear infinite;
+}
+
+/* ─── AURORA OVERLAY ─── */
+.hero::before {
+  content: ''; position: absolute; top: -50%; left: -20%; width: 140%; height: 200%;
+  background: radial-gradient(ellipse at 30% 20%, rgba(0,240,208,0.08) 0%, transparent 50%),
+              radial-gradient(ellipse at 70% 80%, rgba(255,42,133,0.06) 0%, transparent 50%),
+              radial-gradient(ellipse at 50% 50%, rgba(212,175,55,0.04) 0%, transparent 40%);
+  animation: aurora 12s ease-in-out infinite;
+  pointer-events: none; z-index: 1;
+}
+
+/* ─── CARD SHIMMER ─── */
+.arch-card::after, .persp-card::after, .money-card::after, .kpi-card::after {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+  background: linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.03) 45%, rgba(255,255,255,0.06) 50%, rgba(255,255,255,0.03) 55%, transparent 60%);
+  background-size: 200% 100%;
+  animation: shimmer 8s ease-in-out infinite;
+  pointer-events: none; border-radius: inherit;
+}
+
+/* ─── FLOATING CARDS ─── */
+.arch-card:nth-child(1) { animation: float 6s ease-in-out infinite; }
+.arch-card:nth-child(2) { animation: float 6s ease-in-out 1s infinite; }
+.arch-card:nth-child(3) { animation: float 6s ease-in-out 2s infinite; }
+
+/* ─── WAVE BORDER ON FOCUS ─── */
+.ps-card, .arch-card, .persp-card, .money-card {
+  animation: wave-border 8s ease infinite;
+}
+
+/* ─── STATS VALUE GLOW ─── */
+.stat-value {
+  text-shadow: 0 0 40px var(--teal-glow);
+}
+
+/* ─── BUTTON PULSE ─── */
+.btn-primary {
+  position: relative; overflow: hidden;
+}
+.btn-primary::after {
+  content: ''; position: absolute; top: 50%; left: 50%;
+  width: 0; height: 0; border-radius: 50%;
+  background: rgba(255,255,255,0.15);
+  transform: translate(-50%, -50%);
+  transition: width 0.6s, height 0.6s;
+}
+.btn-primary:hover::after {
+  width: 300px; height: 300px;
 }
 
 /* ─── RESPONSIVE ─── */
